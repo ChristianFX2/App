@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#7c3aed">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Mi Sistema Personal">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Mi Sistema Personal</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icons/icon-192.svg">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Mi Sistema Personal</p>
+        <h1>Hola, Christian</h1>
+      </div>
+      <button class="theme-toggle" type="button" id="themeToggle" aria-label="Cambiar modo">
+        <span id="themeIcon" aria-hidden="true">☾</span>
+      </button>
+    </header>
+
+    <nav class="tab-bar" aria-label="Secciones principales">
+      <button class="tab-button active" type="button" data-tab="home" aria-selected="true">Inicio</button>
+      <button class="tab-button" type="button" data-tab="university" aria-selected="false">Universidad</button>
+      <button class="tab-button" type="button" data-tab="rewards" aria-selected="false">Recompensas</button>
+      <button class="tab-button" type="button" data-tab="statistics" aria-selected="false">Estadísticas</button>
+    </nav>
+
+    <section class="tab-view active" id="homeView" data-view="home">
+      <section class="stats-grid" aria-label="Resumen semanal">
+        <article class="stat-card">
+          <span class="stat-label">Estrellas semanales</span>
+          <strong class="stat-value" id="weeklyStars">0 / 100</strong>
+          <div class="progress-track" aria-hidden="true">
+            <span class="progress-fill" id="weeklyProgress"></span>
+          </div>
+        </article>
+
+        <article class="stat-card">
+          <span class="stat-label">Racha actual</span>
+          <strong class="stat-value">7 días</strong>
+          <span class="stat-note">Sigue así</span>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
+          <h2>Tareas de hoy</h2>
+          <span id="taskCount">0 pendientes</span>
+        </div>
+        <div class="task-list" id="taskList" aria-live="polite"></div>
+      </section>
+
+      <section class="event-card" aria-label="Próximo evento">
+        <div>
+          <span class="event-label">Próximo evento</span>
+          <h2 id="nextEventTitle">Sin eventos próximos</h2>
+          <p id="nextEventTime">Agrega uno desde Universidad</p>
+        </div>
+        <span class="event-dot" aria-hidden="true"></span>
+      </section>
+
+      <section class="panel quick-notes-panel">
+        <div class="section-heading">
+          <h2>Notas rápidas</h2>
+          <span id="quickNoteCount">0 notas</span>
+        </div>
+        <div class="quick-note-list" id="quickNoteList" aria-live="polite"></div>
+      </section>
+    </section>
+
+    <section class="tab-view" id="universityView" data-view="university">
+      <section class="panel university-panel">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">Recordatorios</span>
+            <h2>Universidad</h2>
+          </div>
+          <span id="reminderCount">0 activos</span>
+        </div>
+
+        <div class="quick-chip-grid" aria-label="Crear recordatorio rápido">
+          <button class="quick-chip" type="button" data-reminder-type="Cuestionario">Cuestionario</button>
+          <button class="quick-chip" type="button" data-reminder-type="Tarea">Tarea</button>
+          <button class="quick-chip" type="button" data-reminder-type="Examen">Examen</button>
+          <button class="quick-chip" type="button" data-reminder-type="Exposición">Exposición</button>
+          <button class="quick-chip" type="button" data-reminder-type="Proyecto">Proyecto</button>
+        </div>
+      </section>
+
+      <section class="notification-card">
+        <div>
+          <span class="event-label">Notificaciones</span>
+          <h2>Alertas universitarias</h2>
+          <p id="notificationMessage">Revisa recordatorios mientras la app esté abierta.</p>
+        </div>
+        <div class="notification-actions">
+          <span class="notification-status" id="notificationStatus">Pendientes</span>
+          <button class="secondary-button notification-button" type="button" id="enableNotifications">
+            Activar notificaciones
+          </button>
+        </div>
+      </section>
+
+      <section class="reminder-list-section">
+        <div class="section-heading">
+          <h2>Próximos recordatorios</h2>
+          <span>Ordenados por fecha</span>
+        </div>
+        <div class="reminder-list" id="reminderList" aria-live="polite"></div>
+      </section>
+    </section>
+
+    <section class="tab-view" id="rewardsView" data-view="rewards">
+      <section class="panel rewards-summary">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">Saldo disponible</span>
+            <h2>Recompensas</h2>
+          </div>
+          <strong class="reward-balance" id="rewardBalance">0 estrellas</strong>
+        </div>
+        <div class="goal-banner" id="goalBanner" aria-live="polite">
+          ¡Meta semanal alcanzada!
+        </div>
+      </section>
+
+      <section class="reward-grid-section">
+        <div class="section-heading">
+          <h2>Disponibles</h2>
+          <span>Canjea con estrellas</span>
+        </div>
+        <div class="reward-grid" id="rewardGrid" aria-live="polite"></div>
+      </section>
+
+      <section class="reward-history-section">
+        <div class="section-heading">
+          <h2>Historial</h2>
+          <span id="rewardHistoryCount">0 canjes</span>
+        </div>
+        <div class="reward-history" id="rewardHistory" aria-live="polite"></div>
+      </section>
+    </section>
+
+    <section class="tab-view" id="statisticsView" data-view="statistics">
+      <section class="stats-grid statistics-summary" aria-label="Resumen de estadísticas">
+        <article class="stat-card compact-stat">
+          <span class="stat-label">Tareas completadas</span>
+          <strong class="stat-value" id="statCompletedTasks">0</strong>
+        </article>
+        <article class="stat-card compact-stat">
+          <span class="stat-label">Estrellas ganadas</span>
+          <strong class="stat-value" id="statEarnedStars">0</strong>
+        </article>
+        <article class="stat-card compact-stat">
+          <span class="stat-label">Recordatorios activos</span>
+          <strong class="stat-value" id="statActiveReminders">0</strong>
+        </article>
+        <article class="stat-card compact-stat">
+          <span class="stat-label">Recompensas canjeadas</span>
+          <strong class="stat-value" id="statRedeemedRewards">0</strong>
+        </article>
+        <article class="stat-card compact-stat">
+          <span class="stat-label">Racha actual</span>
+          <strong class="stat-value">7 días</strong>
+        </article>
+      </section>
+
+      <section class="analytics-card">
+        <div class="section-heading">
+          <h2>Estrellas por día</h2>
+          <span>Últimos 7 días</span>
+        </div>
+        <div class="bar-chart vertical-chart" id="weeklyStarsChart" aria-label="Gráfico de estrellas por día"></div>
+      </section>
+
+      <section class="analytics-card">
+        <div class="section-heading">
+          <h2>Tareas por categoría</h2>
+          <span>Completadas</span>
+        </div>
+        <div class="bar-chart horizontal-chart" id="categoryTasksChart" aria-label="Gráfico de tareas por categoría"></div>
+      </section>
+
+      <section class="analytics-card">
+        <div class="section-heading">
+          <h2>Progreso semanal</h2>
+          <span id="statsProgressPercent">0%</span>
+        </div>
+        <strong class="stat-value" id="statsProgressValue">0 / 100</strong>
+        <div class="progress-track detailed-progress" aria-hidden="true">
+          <span class="progress-fill" id="statsProgressFill"></span>
+        </div>
+        <p class="progress-message" id="statsProgressMessage">Aún puedes avanzar más</p>
+      </section>
+
+      <section class="analytics-card">
+        <div class="section-heading">
+          <h2>Actividad reciente</h2>
+          <span id="activityCount">0 eventos</span>
+        </div>
+        <div class="activity-list" id="activityList" aria-live="polite"></div>
+      </section>
+    </section>
+  </main>
+
+  <div class="quick-action-backdrop" id="quickActionBackdrop" aria-hidden="true"></div>
+  <div class="quick-action-menu" id="quickActionMenu" aria-hidden="true">
+    <button class="quick-action-card" type="button" data-action="task">
+      <span>Nueva tarea personal</span>
+      <small>Organiza una acción rápida</small>
+    </button>
+    <button class="quick-action-card" type="button" data-action="reminder">
+      <span>Nuevo recordatorio universitario</span>
+      <small>Agenda una entrega o examen</small>
+    </button>
+    <button class="quick-action-card" type="button" data-action="reward">
+      <span>Nueva recompensa personalizada</span>
+      <small>Crea algo para canjear</small>
+    </button>
+    <button class="quick-action-card" type="button" data-action="note">
+      <span>Nota rápida</span>
+      <small>Guarda una idea corta</small>
+    </button>
+  </div>
+  <button class="floating-button" type="button" id="openTaskModal" aria-label="Abrir acciones rápidas" aria-expanded="false">+</button>
+
+  <div class="modal-backdrop" id="taskModal" aria-hidden="true">
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle">
+      <div class="modal-heading">
+        <div>
+          <span class="eyebrow">Nueva tarea</span>
+          <h2 id="taskModalTitle">Crear tarea</h2>
+        </div>
+        <button class="icon-button" type="button" id="closeTaskModal" aria-label="Cerrar modal">×</button>
+      </div>
+
+      <form class="task-form" id="taskForm">
+        <label>
+          <span>Nombre de tarea</span>
+          <input type="text" id="taskName" name="taskName" placeholder="Ej. Leer capítulo 3" autocomplete="off" required>
+        </label>
+
+        <label>
+          <span>Categoría</span>
+          <select id="taskCategory" name="taskCategory" required>
+            <option value="Personal">Personal</option>
+            <option value="Universidad">Universidad</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Estrellas</span>
+          <input type="number" id="taskStars" name="taskStars" min="1" max="100" step="1" placeholder="10" required>
+        </label>
+
+        <label>
+          <span>Prioridad</span>
+          <select id="taskPriority" name="taskPriority" required>
+            <option value="Baja">Baja</option>
+            <option value="Media" selected>Media</option>
+            <option value="Alta">Alta</option>
+          </select>
+        </label>
+
+        <p class="form-error" id="formError" role="alert"></p>
+
+        <div class="modal-actions">
+          <button class="secondary-button" type="button" id="cancelTask">Cancelar</button>
+          <button class="primary-button" type="submit">Guardar</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="reminderModal" aria-hidden="true">
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="reminderModalTitle">
+      <div class="modal-heading">
+        <div>
+          <span class="eyebrow">Universidad</span>
+          <h2 id="reminderModalTitle">Crear recordatorio</h2>
+        </div>
+        <button class="icon-button" type="button" id="closeReminderModal" aria-label="Cerrar modal">×</button>
+      </div>
+
+      <form class="task-form" id="reminderForm">
+        <input type="hidden" id="reminderId">
+
+        <label>
+          <span>Tipo</span>
+          <select id="reminderType" required>
+            <option value="Cuestionario">Cuestionario</option>
+            <option value="Tarea">Tarea</option>
+            <option value="Examen">Examen</option>
+            <option value="Exposición">Exposición</option>
+            <option value="Proyecto">Proyecto</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Curso</span>
+          <select id="reminderCourse" required>
+            <option value="POO">POO</option>
+            <option value="Cálculo III">Cálculo III</option>
+            <option value="Costeo de Operaciones">Costeo de Operaciones</option>
+            <option value="Arquitectura de Computadoras">Arquitectura de Computadoras</option>
+            <option value="Estadística y Probabilidad">Estadística y Probabilidad</option>
+            <option value="Competencias Gerenciales">Competencias Gerenciales</option>
+          </select>
+        </label>
+
+        <div class="form-row">
+          <label>
+            <span>Fecha</span>
+            <input type="date" id="reminderDate" required>
+          </label>
+
+          <label>
+            <span>Hora</span>
+            <input type="time" id="reminderTime" required>
+          </label>
+        </div>
+
+        <label>
+          <span>Prioridad</span>
+          <select id="reminderPriority" required>
+            <option value="Baja">Baja</option>
+            <option value="Media">Media</option>
+            <option value="Alta">Alta</option>
+          </select>
+        </label>
+
+        <label>
+          <span>Descripción opcional</span>
+          <textarea id="reminderDescription" rows="3" placeholder="Ej. Repasar ejercicios de clase"></textarea>
+        </label>
+
+        <p class="form-error" id="reminderError" role="alert"></p>
+
+        <div class="modal-actions">
+          <button class="secondary-button" type="button" id="cancelReminder">Cancelar</button>
+          <button class="primary-button" type="submit">Guardar</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="customRewardModal" aria-hidden="true">
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="customRewardModalTitle">
+      <div class="modal-heading">
+        <div>
+          <span class="eyebrow">Recompensas</span>
+          <h2 id="customRewardModalTitle">Nueva recompensa</h2>
+        </div>
+        <button class="icon-button" type="button" id="closeCustomRewardModal" aria-label="Cerrar modal">×</button>
+      </div>
+
+      <form class="task-form" id="customRewardForm">
+        <label>
+          <span>Nombre</span>
+          <input type="text" id="customRewardName" placeholder="Ej. Café especial" autocomplete="off" required>
+        </label>
+
+        <label>
+          <span>Descripción</span>
+          <textarea id="customRewardDescription" rows="3" placeholder="Describe la recompensa" required></textarea>
+        </label>
+
+        <label>
+          <span>Costo en estrellas</span>
+          <input type="number" id="customRewardCost" min="1" step="1" placeholder="50" required>
+        </label>
+
+        <p class="form-error" id="customRewardError" role="alert"></p>
+
+        <div class="modal-actions">
+          <button class="secondary-button" type="button" id="cancelCustomReward">Cancelar</button>
+          <button class="primary-button" type="submit">Guardar</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="quickNoteModal" aria-hidden="true">
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="quickNoteModalTitle">
+      <div class="modal-heading">
+        <div>
+          <span class="eyebrow">Nota rápida</span>
+          <h2 id="quickNoteModalTitle">Guardar nota</h2>
+        </div>
+        <button class="icon-button" type="button" id="closeQuickNoteModal" aria-label="Cerrar modal">×</button>
+      </div>
+
+      <form class="task-form" id="quickNoteForm">
+        <label>
+          <span>Texto corto</span>
+          <textarea id="quickNoteText" rows="3" maxlength="180" placeholder="Escribe una idea o pendiente breve" required></textarea>
+        </label>
+
+        <p class="form-error" id="quickNoteError" role="alert"></p>
+
+        <div class="modal-actions">
+          <button class="secondary-button" type="button" id="cancelQuickNote">Cancelar</button>
+          <button class="primary-button" type="submit">Guardar</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>

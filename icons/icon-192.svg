@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="Mi Sistema Personal">
+  <rect width="192" height="192" rx="44" fill="#7c3aed"/>
+  <circle cx="144" cy="46" r="20" fill="#fef3c7"/>
+  <rect x="38" y="50" width="84" height="14" rx="7" fill="#ffffff" opacity="0.95"/>
+  <rect x="38" y="82" width="116" height="14" rx="7" fill="#ffffff" opacity="0.78"/>
+  <rect x="38" y="114" width="76" height="14" rx="7" fill="#ffffff" opacity="0.78"/>
+  <path d="M52 151l9 9 22-28" fill="none" stroke="#86efac" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
