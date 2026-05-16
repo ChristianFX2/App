@@ -21,9 +21,14 @@
         <p class="eyebrow">Mi Sistema Personal</p>
         <h1>Hola, Christian</h1>
       </div>
-      <button class="theme-toggle" type="button" id="themeToggle" aria-label="Cambiar modo">
+      <div class="topbar-actions">
+        <button class="theme-toggle" type="button" id="themeToggle" aria-label="Cambiar modo">
         <span id="themeIcon" aria-hidden="true">☾</span>
-      </button>
+        </button>
+        <button class="glass-toggle" type="button" id="glassToggle" aria-label="Activar Liquid Glass" aria-pressed="false">
+          <span id="glassIcon" aria-hidden="true">◇</span>
+        </button>
+      </div>
     </header>
 
     <nav class="tab-bar" aria-label="Secciones principales">
@@ -31,7 +36,6 @@
       <button class="tab-button" type="button" data-tab="university" aria-selected="false">Universidad</button>
       <button class="tab-button" type="button" data-tab="rewards" aria-selected="false">Recompensas</button>
       <button class="tab-button" type="button" data-tab="statistics" aria-selected="false">Estadísticas</button>
-      <button class="tab-button" type="button" data-tab="calendar" aria-selected="false">Calendario</button>
     </nav>
 
     <section class="tab-view active" id="homeView" data-view="home">
@@ -86,6 +90,10 @@
           </div>
           <span id="reminderCount">0 activos</span>
         </div>
+
+        <button class="secondary-button calendar-shortcut" type="button" id="openCalendarShortcut">
+          Ver calendario
+        </button>
 
         <div class="quick-chip-grid" aria-label="Crear recordatorio rápido">
           <button class="quick-chip" type="button" data-reminder-type="Cuestionario">Cuestionario</button>

@@ -1,6 +1,7 @@
 const WEEKLY_GOAL = 100;
 const TASKS_KEY = "miSistemaPersonal.tasks";
 const THEME_KEY = "miSistemaPersonal.theme";
+const LIQUID_GLASS_KEY = "miSistemaPersonal.liquidGlass";
 const REMINDERS_KEY = "miSistemaPersonal.universityReminders";
 const REDEMPTIONS_KEY = "miSistemaPersonal.rewardRedemptions";
 const ACTIVITY_KEY = "miSistemaPersonal.activityLog";
@@ -102,6 +103,8 @@ const weeklyProgress = document.querySelector("#weeklyProgress");
 const taskCount = document.querySelector("#taskCount");
 const themeToggle = document.querySelector("#themeToggle");
 const themeIcon = document.querySelector("#themeIcon");
+const glassToggle = document.querySelector("#glassToggle");
+const glassIcon = document.querySelector("#glassIcon");
 const openTaskModal = document.querySelector("#openTaskModal");
 const taskModal = document.querySelector("#taskModal");
 const closeTaskModal = document.querySelector("#closeTaskModal");
@@ -116,6 +119,7 @@ const formError = document.querySelector("#formError");
 const tabButtons = document.querySelectorAll(".tab-button");
 const tabViews = document.querySelectorAll(".tab-view");
 const quickChips = document.querySelectorAll(".quick-chip");
+const openCalendarShortcut = document.querySelector("#openCalendarShortcut");
 const reminderList = document.querySelector("#reminderList");
 const reminderCount = document.querySelector("#reminderCount");
 const nextEventTitle = document.querySelector("#nextEventTitle");
@@ -182,6 +186,7 @@ const selectedDayLabel = document.querySelector("#selectedDayLabel");
 const dayDetails = document.querySelector("#dayDetails");
 
 applySavedTheme();
+applySavedGlassMode();
 applySavedTab();
 render();
 updateNotificationStatus();
@@ -189,6 +194,7 @@ checkReminderNotifications();
 notificationCheckTimer = window.setInterval(checkReminderNotifications, 60000);
 
 themeToggle.addEventListener("click", toggleTheme);
+glassToggle.addEventListener("click", toggleGlassMode);
 openTaskModal.addEventListener("click", toggleQuickActionMenu);
 closeTaskModal.addEventListener("click", hideTaskModal);
 cancelTask.addEventListener("click", hideTaskModal);
@@ -215,6 +221,8 @@ tabButtons.forEach((button) => {
 quickChips.forEach((chip) => {
   chip.addEventListener("click", () => showReminderModal(chip.dataset.reminderType));
 });
+
+openCalendarShortcut.addEventListener("click", () => setActiveTab("calendar"));
 
 quickActionCards.forEach((card) => {
   card.addEventListener("click", () => handleQuickAction(card.dataset.action));
@@ -554,9 +562,24 @@ function render() {
   updateNextEvent();
 }
 
+function createTextElement(tagName, className, text) {
+  const element = document.createElement(tagName);
+  element.className = className;
+  element.textContent = text;
+  return element;
+}
+
+function createPill(text, extraClass = "") {
+  return createTextElement("span", `pill${extraClass ? ` ${extraClass}` : ""}`, text);
+}
+
+function createPriorityBadge(priority) {
+  return createTextElement("span", `priority-badge ${getPriorityClass(priority)}`, priority);
+}
+
 // Las tareas siguen alimentando estrellas, progreso y pendientes.
 function renderTasks() {
-  taskList.innerHTML = "";
+  taskList.replaceChildren();
 
   tasks.forEach((task) => {
     const taskItem = document.createElement("article");
@@ -567,7 +590,9 @@ function renderTasks() {
     toggleButton.className = "task-toggle";
     toggleButton.setAttribute("aria-pressed", String(task.completed));
     toggleButton.setAttribute("aria-label", `${task.completed ? "Desmarcar" : "Completar"} ${task.title}`);
-    toggleButton.innerHTML = '<span class="task-check" aria-hidden="true">✓</span>';
+    const taskCheck = createTextElement("span", "task-check", "✓");
+    taskCheck.setAttribute("aria-hidden", "true");
+    toggleButton.appendChild(taskCheck);
     toggleButton.addEventListener("click", () => toggleTask(task.id));
 
     const taskContent = document.createElement("div");
@@ -580,13 +605,12 @@ function renderTasks() {
     const taskMeta = document.createElement("span");
     taskMeta.className = "task-meta";
     const priorityClass = getPriorityClass(task.priority || "Media");
-    taskMeta.innerHTML = `
-      <span class="pill"></span>
-      <span class="pill">${formatDate(task.date)}</span>
-      <span class="pill stars">+${task.stars} estrellas</span>
-      <span class="pill priority-${priorityClass}">${task.priority || "Media"}</span>
-    `;
-    taskMeta.querySelector(".pill").textContent = task.category;
+    taskMeta.append(
+      createPill(task.category),
+      createPill(formatDate(task.date)),
+      createPill(`+${task.stars} estrellas`, "stars"),
+      createPill(task.priority || "Media", `priority-${priorityClass}`)
+    );
 
     taskContent.append(taskTitle, taskMeta);
 
@@ -605,7 +629,7 @@ function renderTasks() {
 // Los recordatorios académicos viven separados de las tareas y se ordenan por fecha.
 function renderReminders() {
   universityReminders.sort(compareReminders);
-  reminderList.innerHTML = "";
+  reminderList.replaceChildren();
   reminderCount.textContent = universityReminders.length === 1 ? "1 activo" : `${universityReminders.length} activos`;
 
   if (!universityReminders.length) {
@@ -632,11 +656,11 @@ function renderReminders() {
 
     const meta = document.createElement("span");
     meta.className = "reminder-meta";
-    meta.innerHTML = `
-      <span class="pill">${formatDate(reminder.date)}</span>
-      <span class="pill">${formatTime(reminder.time)}</span>
-      <span class="priority-badge ${getPriorityClass(reminder.priority)}">${reminder.priority}</span>
-    `;
+    meta.append(
+      createPill(formatDate(reminder.date)),
+      createPill(formatTime(reminder.time)),
+      createPriorityBadge(reminder.priority)
+    );
 
     content.append(title, meta);
 
@@ -674,7 +698,7 @@ function renderReminders() {
 function renderRewards() {
   const balance = getStarBalance();
 
-  rewardGrid.innerHTML = "";
+  rewardGrid.replaceChildren();
   rewardBalance.textContent = `${balance.available} estrellas`;
   goalBanner.classList.toggle("visible", balance.available >= WEEKLY_GOAL);
 
@@ -717,7 +741,7 @@ function renderRewards() {
 }
 
 function renderQuickNotes() {
-  quickNoteList.innerHTML = "";
+  quickNoteList.replaceChildren();
   quickNoteCount.textContent = quickNotes.length === 1 ? "1 nota" : `${quickNotes.length} notas`;
 
   if (!quickNotes.length) {
@@ -755,7 +779,7 @@ function renderQuickNotes() {
 }
 
 function renderRewardHistory() {
-  rewardHistory.innerHTML = "";
+  rewardHistory.replaceChildren();
   rewardHistoryCount.textContent = rewardRedemptions.length === 1 ? "1 canje" : `${rewardRedemptions.length} canjes`;
 
   if (!rewardRedemptions.length) {
@@ -817,7 +841,7 @@ function renderWeeklyStarsChart(completedTasks) {
     })
   );
 
-  weeklyStarsChart.innerHTML = "";
+  weeklyStarsChart.replaceChildren();
 
   days.forEach((day) => {
     const stars = completedTasks.reduce((total, task) => {
@@ -826,11 +850,16 @@ function renderWeeklyStarsChart(completedTasks) {
     const height = Math.max((stars / maxStars) * 100, stars > 0 ? 8 : 0);
     const bar = document.createElement("div");
     bar.className = "day-bar";
-    bar.innerHTML = `
-      <span class="bar-value">${stars}</span>
-      <span class="bar-track"><span class="bar-fill" style="height: ${height}%"></span></span>
-      <span class="bar-label">${day.label}</span>
-    `;
+    const value = createTextElement("span", "bar-value", String(stars));
+    const track = document.createElement("span");
+    track.className = "bar-track";
+    const fill = document.createElement("span");
+    fill.className = "bar-fill";
+    fill.style.height = `${height}%`;
+    const label = createTextElement("span", "bar-label", day.label);
+
+    track.appendChild(fill);
+    bar.append(value, track, label);
     weeklyStarsChart.appendChild(bar);
   });
 }
@@ -842,16 +871,21 @@ function renderCategoryChart(completedTasks) {
   };
   const maxTotal = Math.max(1, totals.Personal, totals.Universidad);
 
-  categoryTasksChart.innerHTML = "";
+  categoryTasksChart.replaceChildren();
 
   Object.entries(totals).forEach(([category, total]) => {
     const row = document.createElement("div");
     row.className = "category-row";
-    row.innerHTML = `
-      <span class="category-label">${category}</span>
-      <span class="category-track"><span class="category-fill" style="width: ${(total / maxTotal) * 100}%"></span></span>
-      <span class="category-value">${total}</span>
-    `;
+    const label = createTextElement("span", "category-label", category);
+    const track = document.createElement("span");
+    track.className = "category-track";
+    const fill = document.createElement("span");
+    fill.className = "category-fill";
+    fill.style.width = `${(total / maxTotal) * 100}%`;
+    const value = createTextElement("span", "category-value", String(total));
+
+    track.appendChild(fill);
+    row.append(label, track, value);
     categoryTasksChart.appendChild(row);
   });
 }
@@ -873,7 +907,7 @@ function renderStatsProgress(availableStars) {
 }
 
 function renderActivityLog() {
-  activityList.innerHTML = "";
+  activityList.replaceChildren();
   activityCount.textContent = activityLog.length === 1 ? "1 evento" : `${activityLog.length} eventos`;
 
   if (!activityLog.length) {
@@ -887,11 +921,10 @@ function renderActivityLog() {
   activityLog.forEach((activity) => {
     const item = document.createElement("article");
     item.className = "activity-item";
-    item.innerHTML = `
-      <span class="activity-title"></span>
-      <span class="activity-time">${formatDateTime(activity.createdAt)}</span>
-    `;
-    item.querySelector(".activity-title").textContent = activity.message;
+    const title = createTextElement("span", "activity-title", activity.message);
+    const time = createTextElement("span", "activity-time", formatDateTime(activity.createdAt));
+
+    item.append(title, time);
     activityList.appendChild(item);
   });
 }
@@ -905,7 +938,7 @@ function renderCalendar() {
   const leadingEmptyDays = (firstDay.getDay() + 6) % 7;
 
   calendarMonthLabel.textContent = formatMonthYear(calendarVisibleDate);
-  calendarGrid.innerHTML = "";
+  calendarGrid.replaceChildren();
 
   for (let index = 0; index < leadingEmptyDays; index += 1) {
     const emptyCell = document.createElement("span");
@@ -970,7 +1003,7 @@ function renderCalendar() {
 function renderDayDetails() {
   const dayItems = getCalendarItemsForDate(selectedCalendarDate);
   selectedDayLabel.textContent = formatLongDate(selectedCalendarDate);
-  dayDetails.innerHTML = "";
+  dayDetails.replaceChildren();
 
   if (!dayItems.tasks.length && !dayItems.reminders.length) {
     const emptyState = document.createElement("p");
@@ -990,11 +1023,11 @@ function renderDayDetails() {
 
     const meta = document.createElement("span");
     meta.className = "task-meta";
-    meta.innerHTML = `
-      <span class="pill">Tarea ${task.category}</span>
-      <span class="pill">${task.completed ? "Completada" : "Pendiente"}</span>
-      <span class="priority-badge ${getPriorityClass(task.priority || "Media")}">${task.priority || "Media"}</span>
-    `;
+    meta.append(
+      createPill(`Tarea ${task.category}`),
+      createPill(task.completed ? "Completada" : "Pendiente"),
+      createPriorityBadge(task.priority || "Media")
+    );
 
     item.append(title, meta);
     dayDetails.appendChild(item);
@@ -1010,11 +1043,11 @@ function renderDayDetails() {
 
     const meta = document.createElement("span");
     meta.className = "task-meta";
-    meta.innerHTML = `
-      <span class="pill">Recordatorio</span>
-      <span class="pill">${formatTime(reminder.time)}</span>
-      <span class="priority-badge ${getPriorityClass(reminder.priority)}">${reminder.priority}</span>
-    `;
+    meta.append(
+      createPill("Recordatorio"),
+      createPill(formatTime(reminder.time)),
+      createPriorityBadge(reminder.priority)
+    );
 
     item.append(title, meta);
 
@@ -1474,7 +1507,7 @@ function toggleTheme() {
 }
 
 function applySavedTheme() {
-  const savedTheme = localStorage.getItem(THEME_KEY) || "light";
+  const savedTheme = localStorage.getItem(THEME_KEY) || "dark";
   setTheme(savedTheme);
 }
 
@@ -1485,6 +1518,23 @@ function setTheme(theme) {
   themeIcon.textContent = isDark ? "☀" : "☾";
   themeToggle.setAttribute("aria-label", isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
   localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
+}
+
+function toggleGlassMode() {
+  setGlassMode(!document.body.classList.contains("liquid-glass"));
+}
+
+function applySavedGlassMode() {
+  const savedGlassMode = localStorage.getItem(LIQUID_GLASS_KEY);
+  setGlassMode(savedGlassMode === null ? true : savedGlassMode === "true");
+}
+
+function setGlassMode(isEnabled) {
+  document.body.classList.toggle("liquid-glass", isEnabled);
+  glassIcon.textContent = isEnabled ? "◆" : "◇";
+  glassToggle.setAttribute("aria-pressed", String(isEnabled));
+  glassToggle.setAttribute("aria-label", isEnabled ? "Desactivar Liquid Glass" : "Activar Liquid Glass");
+  localStorage.setItem(LIQUID_GLASS_KEY, String(isEnabled));
 }
 
 function applySavedTab() {
