@@ -91,6 +91,8 @@ let activityLog = loadActivityLog();
 let customRewards = loadCustomRewards();
 let quickNotes = loadQuickNotes();
 let notificationAlertsSent = loadNotificationAlerts();
+let calendarVisibleDate = new Date();
+let selectedCalendarDate = formatDateKey(new Date());
 let toastTimer;
 let notificationCheckTimer;
 
@@ -107,6 +109,7 @@ const cancelTask = document.querySelector("#cancelTask");
 const taskForm = document.querySelector("#taskForm");
 const taskName = document.querySelector("#taskName");
 const taskCategory = document.querySelector("#taskCategory");
+const taskDate = document.querySelector("#taskDate");
 const taskStars = document.querySelector("#taskStars");
 const taskPriority = document.querySelector("#taskPriority");
 const formError = document.querySelector("#formError");
@@ -170,6 +173,13 @@ const quickNoteCount = document.querySelector("#quickNoteCount");
 const enableNotifications = document.querySelector("#enableNotifications");
 const notificationStatus = document.querySelector("#notificationStatus");
 const notificationMessage = document.querySelector("#notificationMessage");
+const calendarMonthLabel = document.querySelector("#calendarMonthLabel");
+const calendarGrid = document.querySelector("#calendarGrid");
+const previousMonth = document.querySelector("#previousMonth");
+const nextMonth = document.querySelector("#nextMonth");
+const goToToday = document.querySelector("#goToToday");
+const selectedDayLabel = document.querySelector("#selectedDayLabel");
+const dayDetails = document.querySelector("#dayDetails");
 
 applySavedTheme();
 applySavedTab();
@@ -194,6 +204,9 @@ closeQuickNoteModal.addEventListener("click", hideQuickNoteModal);
 cancelQuickNote.addEventListener("click", hideQuickNoteModal);
 quickNoteForm.addEventListener("submit", saveQuickNote);
 enableNotifications.addEventListener("click", requestNotificationPermission);
+previousMonth.addEventListener("click", () => changeCalendarMonth(-1));
+nextMonth.addEventListener("click", () => changeCalendarMonth(1));
+goToToday.addEventListener("click", showTodayInCalendar);
 
 tabButtons.forEach((button) => {
   button.addEventListener("click", () => setActiveTab(button.dataset.tab));
@@ -259,33 +272,26 @@ document.addEventListener("keydown", (event) => {
 
 function loadTasks() {
   const savedTasks = localStorage.getItem(TASKS_KEY);
+  const today = formatDateKey(new Date());
 
   if (!savedTasks) {
-    return [...defaultTasks];
+    return defaultTasks.map((task) => normalizeTask(task, today));
   }
 
   try {
     const parsedTasks = JSON.parse(savedTasks);
 
     if (!Array.isArray(parsedTasks)) {
-      return [...defaultTasks];
+      return defaultTasks.map((task) => normalizeTask(task, today));
     }
 
     const validTasks = parsedTasks
       .filter(isValidTask)
-      .map((task) => ({
-        id: task.id,
-        title: task.title.trim(),
-        category: task.category,
-        stars: Number(task.stars),
-        completed: Boolean(task.completed),
-        completedAt: typeof task.completedAt === "string" ? task.completedAt : "",
-        priority: priorities.includes(task.priority) ? task.priority : "Media"
-      }));
+      .map((task) => normalizeTask(task, today));
 
-    return validTasks.length ? validTasks : [...defaultTasks];
+    return validTasks.length ? validTasks : defaultTasks.map((task) => normalizeTask(task, today));
   } catch {
-    return [...defaultTasks];
+    return defaultTasks.map((task) => normalizeTask(task, today));
   }
 }
 
@@ -417,6 +423,19 @@ function isValidTask(task) {
   );
 }
 
+function normalizeTask(task, fallbackDate = formatDateKey(new Date())) {
+  return {
+    id: task.id,
+    title: task.title.trim(),
+    category: task.category,
+    stars: Number(task.stars),
+    completed: Boolean(task.completed),
+    completedAt: typeof task.completedAt === "string" ? task.completedAt : "",
+    priority: priorities.includes(task.priority) ? task.priority : "Media",
+    date: isValidDate(task.date) ? task.date : fallbackDate
+  };
+}
+
 function isValidReminder(reminder) {
   return (
     reminder &&
@@ -530,6 +549,7 @@ function render() {
   renderRewardHistory();
   renderQuickNotes();
   renderStatistics();
+  renderCalendar();
   updateStats();
   updateNextEvent();
 }
@@ -562,6 +582,7 @@ function renderTasks() {
     const priorityClass = getPriorityClass(task.priority || "Media");
     taskMeta.innerHTML = `
       <span class="pill"></span>
+      <span class="pill">${formatDate(task.date)}</span>
       <span class="pill stars">+${task.stars} estrellas</span>
       <span class="pill priority-${priorityClass}">${task.priority || "Media"}</span>
     `;
@@ -875,6 +896,199 @@ function renderActivityLog() {
   });
 }
 
+function renderCalendar() {
+  const visibleYear = calendarVisibleDate.getFullYear();
+  const visibleMonth = calendarVisibleDate.getMonth();
+  const todayKey = formatDateKey(new Date());
+  const firstDay = new Date(visibleYear, visibleMonth, 1);
+  const daysInMonth = new Date(visibleYear, visibleMonth + 1, 0).getDate();
+  const leadingEmptyDays = (firstDay.getDay() + 6) % 7;
+
+  calendarMonthLabel.textContent = formatMonthYear(calendarVisibleDate);
+  calendarGrid.innerHTML = "";
+
+  for (let index = 0; index < leadingEmptyDays; index += 1) {
+    const emptyCell = document.createElement("span");
+    emptyCell.className = "calendar-day calendar-day-empty";
+    calendarGrid.appendChild(emptyCell);
+  }
+
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = new Date(visibleYear, visibleMonth, day);
+    const dateKey = formatDateKey(date);
+    const dayItems = getCalendarItemsForDate(dateKey);
+    const priorityClass = getHighestPriorityClass(dayItems);
+    const hasActivities = dayItems.tasks.length || dayItems.reminders.length;
+    const dayButton = document.createElement("button");
+
+    dayButton.type = "button";
+    dayButton.className = [
+      "calendar-day",
+      dateKey === todayKey ? "today" : "",
+      dateKey === selectedCalendarDate ? "selected" : "",
+      hasActivities ? "has-activities" : "",
+      priorityClass ? `priority-${priorityClass}` : ""
+    ].filter(Boolean).join(" ");
+    dayButton.setAttribute("aria-pressed", String(dateKey === selectedCalendarDate));
+    dayButton.setAttribute("aria-label", `${formatLongDate(dateKey)}, ${getCalendarActivityLabel(dayItems)}`);
+    dayButton.addEventListener("click", () => selectCalendarDate(dateKey));
+
+    const dayNumber = document.createElement("span");
+    dayNumber.className = "calendar-day-number";
+    dayNumber.textContent = String(day);
+    dayButton.appendChild(dayNumber);
+
+    if (hasActivities) {
+      const indicators = document.createElement("span");
+      indicators.className = "calendar-indicators";
+
+      if (dayItems.tasks.length) {
+        const taskIndicator = document.createElement("span");
+        taskIndicator.className = "calendar-indicator task-indicator";
+        taskIndicator.textContent = String(dayItems.tasks.length);
+        taskIndicator.setAttribute("aria-label", `${dayItems.tasks.length} tareas`);
+        indicators.appendChild(taskIndicator);
+      }
+
+      if (dayItems.reminders.length) {
+        const reminderIndicator = document.createElement("span");
+        reminderIndicator.className = "calendar-indicator reminder-indicator";
+        reminderIndicator.textContent = String(dayItems.reminders.length);
+        reminderIndicator.setAttribute("aria-label", `${dayItems.reminders.length} recordatorios`);
+        indicators.appendChild(reminderIndicator);
+      }
+
+      dayButton.appendChild(indicators);
+    }
+
+    calendarGrid.appendChild(dayButton);
+  }
+
+  renderDayDetails();
+}
+
+function renderDayDetails() {
+  const dayItems = getCalendarItemsForDate(selectedCalendarDate);
+  selectedDayLabel.textContent = formatLongDate(selectedCalendarDate);
+  dayDetails.innerHTML = "";
+
+  if (!dayItems.tasks.length && !dayItems.reminders.length) {
+    const emptyState = document.createElement("p");
+    emptyState.className = "empty-state";
+    emptyState.textContent = "No tienes actividades para este día.";
+    dayDetails.appendChild(emptyState);
+    return;
+  }
+
+  dayItems.tasks.forEach((task) => {
+    const item = document.createElement("article");
+    item.className = `day-detail-item${task.completed ? " completed" : ""}`;
+
+    const title = document.createElement("span");
+    title.className = "day-detail-title";
+    title.textContent = task.title;
+
+    const meta = document.createElement("span");
+    meta.className = "task-meta";
+    meta.innerHTML = `
+      <span class="pill">Tarea ${task.category}</span>
+      <span class="pill">${task.completed ? "Completada" : "Pendiente"}</span>
+      <span class="priority-badge ${getPriorityClass(task.priority || "Media")}">${task.priority || "Media"}</span>
+    `;
+
+    item.append(title, meta);
+    dayDetails.appendChild(item);
+  });
+
+  dayItems.reminders.forEach((reminder) => {
+    const item = document.createElement("article");
+    item.className = "day-detail-item";
+
+    const title = document.createElement("span");
+    title.className = "day-detail-title";
+    title.textContent = `${reminder.type} de ${reminder.course}`;
+
+    const meta = document.createElement("span");
+    meta.className = "task-meta";
+    meta.innerHTML = `
+      <span class="pill">Recordatorio</span>
+      <span class="pill">${formatTime(reminder.time)}</span>
+      <span class="priority-badge ${getPriorityClass(reminder.priority)}">${reminder.priority}</span>
+    `;
+
+    item.append(title, meta);
+
+    if (reminder.description) {
+      const description = document.createElement("p");
+      description.className = "reminder-description";
+      description.textContent = reminder.description;
+      item.appendChild(description);
+    }
+
+    dayDetails.appendChild(item);
+  });
+}
+
+function changeCalendarMonth(offset) {
+  calendarVisibleDate = new Date(calendarVisibleDate.getFullYear(), calendarVisibleDate.getMonth() + offset, 1);
+  selectedCalendarDate = formatDateKey(new Date(calendarVisibleDate.getFullYear(), calendarVisibleDate.getMonth(), 1));
+  renderCalendar();
+}
+
+function showTodayInCalendar() {
+  const today = new Date();
+  calendarVisibleDate = new Date(today.getFullYear(), today.getMonth(), 1);
+  selectedCalendarDate = formatDateKey(today);
+  renderCalendar();
+}
+
+function selectCalendarDate(dateKey) {
+  selectedCalendarDate = dateKey;
+  renderCalendar();
+}
+
+function getCalendarItemsForDate(dateKey) {
+  return {
+    tasks: tasks.filter((task) => task.date === dateKey),
+    reminders: universityReminders.filter((reminder) => reminder.date === dateKey)
+  };
+}
+
+function getCalendarActivityLabel(dayItems) {
+  const labels = [];
+
+  if (dayItems.tasks.length) {
+    labels.push(`${dayItems.tasks.length} tareas`);
+  }
+
+  if (dayItems.reminders.length) {
+    labels.push(`${dayItems.reminders.length} recordatorios`);
+  }
+
+  return labels.length ? labels.join(", ") : "sin actividades";
+}
+
+function getHighestPriorityClass(dayItems) {
+  const dayPriorities = [
+    ...dayItems.reminders.map((reminder) => reminder.priority),
+    ...dayItems.tasks.map((task) => task.priority || "Media")
+  ];
+
+  if (dayPriorities.includes("Alta")) {
+    return "high";
+  }
+
+  if (dayPriorities.includes("Media")) {
+    return "medium";
+  }
+
+  if (dayPriorities.includes("Baja")) {
+    return "low";
+  }
+
+  return "";
+}
+
 function toggleTask(taskId) {
   const currentTask = tasks.find((task) => task.id === taskId);
   const willComplete = currentTask ? !currentTask.completed : false;
@@ -914,6 +1128,7 @@ function addTask(event) {
 
   const title = taskName.value.trim();
   const category = taskCategory.value;
+  const date = taskDate.value;
   const stars = Number(taskStars.value);
   const priority = taskPriority.value;
 
@@ -924,6 +1139,11 @@ function addTask(event) {
 
   if (!["Personal", "Universidad"].includes(category)) {
     showFormError(formError, "Elige una categoría válida.");
+    return;
+  }
+
+  if (!isValidDate(date)) {
+    showFormError(formError, "Elige una fecha válida.");
     return;
   }
 
@@ -943,6 +1163,7 @@ function addTask(event) {
       id: createId("task"),
       title,
       category,
+      date,
       stars: Math.round(stars),
       completed: false,
       completedAt: "",
@@ -1272,7 +1493,7 @@ function applySavedTab() {
 }
 
 function setActiveTab(tabName) {
-  const safeTab = ["home", "university", "rewards", "statistics"].includes(tabName) ? tabName : "home";
+  const safeTab = ["home", "university", "rewards", "statistics", "calendar"].includes(tabName) ? tabName : "home";
 
   tabButtons.forEach((button) => {
     const isActive = button.dataset.tab === safeTab;
@@ -1406,6 +1627,7 @@ function hideQuickNoteModal() {
 function clearTaskForm() {
   taskForm.reset();
   taskCategory.value = "Personal";
+  taskDate.value = formatDateKey(new Date());
   taskPriority.value = "Media";
   formError.textContent = "";
 }
@@ -1448,6 +1670,24 @@ function formatDate(value) {
   return new Intl.DateTimeFormat("es-PE", {
     day: "2-digit",
     month: "short"
+  }).format(date);
+}
+
+function formatMonthYear(date) {
+  return new Intl.DateTimeFormat("es-PE", {
+    month: "long",
+    year: "numeric"
+  }).format(date);
+}
+
+function formatLongDate(value) {
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+
+  return new Intl.DateTimeFormat("es-PE", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long"
   }).format(date);
 }
 

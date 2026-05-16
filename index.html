@@ -31,6 +31,7 @@
       <button class="tab-button" type="button" data-tab="university" aria-selected="false">Universidad</button>
       <button class="tab-button" type="button" data-tab="rewards" aria-selected="false">Recompensas</button>
       <button class="tab-button" type="button" data-tab="statistics" aria-selected="false">Estadísticas</button>
+      <button class="tab-button" type="button" data-tab="calendar" aria-selected="false">Calendario</button>
     </nav>
 
     <section class="tab-view active" id="homeView" data-view="home">
@@ -209,6 +210,45 @@
         <div class="activity-list" id="activityList" aria-live="polite"></div>
       </section>
     </section>
+
+    <section class="tab-view" id="calendarView" data-view="calendar">
+      <section class="calendar-panel">
+        <div class="calendar-toolbar">
+          <div>
+            <span class="eyebrow">Agenda mensual</span>
+            <h2 id="calendarMonthLabel">Calendario</h2>
+          </div>
+          <div class="calendar-actions" aria-label="Navegación del calendario">
+            <button class="secondary-button calendar-nav-button" type="button" id="previousMonth">Anterior</button>
+            <button class="secondary-button calendar-nav-button today-button" type="button" id="goToToday">Hoy</button>
+            <button class="secondary-button calendar-nav-button" type="button" id="nextMonth">Siguiente</button>
+          </div>
+        </div>
+
+        <div class="calendar-weekdays" aria-hidden="true">
+          <span>Lun</span>
+          <span>Mar</span>
+          <span>Mié</span>
+          <span>Jue</span>
+          <span>Vie</span>
+          <span>Sáb</span>
+          <span>Dom</span>
+        </div>
+
+        <div class="calendar-grid" id="calendarGrid" aria-label="Calendario mensual"></div>
+      </section>
+
+      <section class="day-details">
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">Actividades</span>
+            <h2>Detalles del día</h2>
+          </div>
+          <span id="selectedDayLabel">Hoy</span>
+        </div>
+        <div class="day-detail-list" id="dayDetails" aria-live="polite"></div>
+      </section>
+    </section>
   </main>
 
   <div class="quick-action-backdrop" id="quickActionBackdrop" aria-hidden="true"></div>
@@ -254,6 +294,11 @@
             <option value="Personal">Personal</option>
             <option value="Universidad">Universidad</option>
           </select>
+        </label>
+
+        <label>
+          <span>Fecha</span>
+          <input type="date" id="taskDate" name="taskDate" required>
         </label>
 
         <label>
