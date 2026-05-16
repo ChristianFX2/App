@@ -32,10 +32,40 @@
     </header>
 
     <nav class="tab-bar" aria-label="Secciones principales">
-      <button class="tab-button active" type="button" data-tab="home" aria-selected="true">Inicio</button>
-      <button class="tab-button" type="button" data-tab="university" aria-selected="false">Universidad</button>
-      <button class="tab-button" type="button" data-tab="rewards" aria-selected="false">Recompensas</button>
-      <button class="tab-button" type="button" data-tab="statistics" aria-selected="false">Estadísticas</button>
+      <button class="tab-button active" type="button" data-tab="home" aria-label="Inicio" aria-selected="true">
+        <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3.75 11.4 12 4.25l8.25 7.15"></path>
+          <path d="M5.75 10.25V20h4.6v-5.65h3.3V20h4.6v-9.75"></path>
+        </svg>
+        <span class="sr-only">Inicio</span>
+      </button>
+      <button class="tab-button" type="button" data-tab="university" aria-label="Universidad" aria-selected="false">
+        <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 8.75 12 4.5l9 4.25-9 4.25-9-4.25Z"></path>
+          <path d="M7 11v4.15c0 1.75 2.25 3.1 5 3.1s5-1.35 5-3.1V11"></path>
+          <path d="M20 9.5v5"></path>
+        </svg>
+        <span class="sr-only">Universidad</span>
+      </button>
+      <button class="tab-button" type="button" data-tab="rewards" aria-label="Recompensas" aria-selected="false">
+        <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4.75 10h14.5v10H4.75V10Z"></path>
+          <path d="M3.75 6.75h16.5V10H3.75V6.75Z"></path>
+          <path d="M12 6.75V20"></path>
+          <path d="M12 6.75c-1.2-2.4-4.4-2.15-4.4.05 0 1.25 1.2 1.95 2.55 1.95H12"></path>
+          <path d="M12 6.75c1.2-2.4 4.4-2.15 4.4.05 0 1.25-1.2 1.95-2.55 1.95H12"></path>
+        </svg>
+        <span class="sr-only">Recompensas</span>
+      </button>
+      <button class="tab-button" type="button" data-tab="statistics" aria-label="Estadísticas" aria-selected="false">
+        <svg class="tab-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M6.5 19V11.5"></path>
+          <path d="M12 19V5.5"></path>
+          <path d="M17.5 19v-9.75"></path>
+          <path d="M4 19.25h16"></path>
+        </svg>
+        <span class="sr-only">Estadísticas</span>
+      </button>
     </nav>
 
     <section class="tab-view active" id="homeView" data-view="home">
