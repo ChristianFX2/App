@@ -115,6 +115,7 @@ const taskCategory = document.querySelector("#taskCategory");
 const taskDate = document.querySelector("#taskDate");
 const taskStars = document.querySelector("#taskStars");
 const taskPriority = document.querySelector("#taskPriority");
+const taskRepeatDaily = document.querySelector("#taskRepeatDaily");
 const formError = document.querySelector("#formError");
 const tabButtons = document.querySelectorAll(".tab-button");
 const tabViews = document.querySelectorAll(".tab-view");
@@ -432,16 +433,35 @@ function isValidTask(task) {
 }
 
 function normalizeTask(task, fallbackDate = formatDateKey(new Date())) {
+  const repeatDaily = Boolean(task.repeatDaily);
+  const completedDates = getNormalizedCompletedDates(task);
+
   return {
     id: task.id,
     title: task.title.trim(),
     category: task.category,
     stars: Number(task.stars),
-    completed: Boolean(task.completed),
+    completed: repeatDaily ? false : Boolean(task.completed),
     completedAt: typeof task.completedAt === "string" ? task.completedAt : "",
     priority: priorities.includes(task.priority) ? task.priority : "Media",
-    date: isValidDate(task.date) ? task.date : fallbackDate
+    date: isValidDate(task.date) ? task.date : fallbackDate,
+    repeatDaily,
+    completedDates
   };
+}
+
+function getNormalizedCompletedDates(task) {
+  const dates = Array.isArray(task.completedDates) ? task.completedDates.filter(isValidDate) : [];
+
+  if (task.repeatDaily && task.completed && typeof task.completedAt === "string") {
+    const completedDate = task.completedAt.slice(0, 10);
+
+    if (isValidDate(completedDate)) {
+      dates.push(completedDate);
+    }
+  }
+
+  return [...new Set(dates)].sort();
 }
 
 function isValidReminder(reminder) {
@@ -580,16 +600,18 @@ function createPriorityBadge(priority) {
 // Las tareas siguen alimentando estrellas, progreso y pendientes.
 function renderTasks() {
   taskList.replaceChildren();
+  const todayKey = formatDateKey(new Date());
 
   tasks.forEach((task) => {
+    const completedToday = isTaskCompletedOnDate(task, todayKey);
     const taskItem = document.createElement("article");
-    taskItem.className = `task-item${task.completed ? " completed" : ""}`;
+    taskItem.className = `task-item${completedToday ? " completed" : ""}`;
 
     const toggleButton = document.createElement("button");
     toggleButton.type = "button";
     toggleButton.className = "task-toggle";
-    toggleButton.setAttribute("aria-pressed", String(task.completed));
-    toggleButton.setAttribute("aria-label", `${task.completed ? "Desmarcar" : "Completar"} ${task.title}`);
+    toggleButton.setAttribute("aria-pressed", String(completedToday));
+    toggleButton.setAttribute("aria-label", `${completedToday ? "Desmarcar" : "Completar"} ${task.title}`);
     const taskCheck = createTextElement("span", "task-check", "✓");
     taskCheck.setAttribute("aria-hidden", "true");
     toggleButton.appendChild(taskCheck);
@@ -611,6 +633,10 @@ function renderTasks() {
       createPill(`+${task.stars} estrellas`, "stars"),
       createPill(task.priority || "Media", `priority-${priorityClass}`)
     );
+
+    if (isRecurringTask(task)) {
+      taskMeta.appendChild(createPill("Diaria", "daily"));
+    }
 
     taskContent.append(taskTitle, taskMeta);
 
@@ -817,26 +843,26 @@ function renderRewardHistory() {
 
 function renderStatistics() {
   const balance = getStarBalance();
-  const completedTasks = tasks.filter((task) => task.completed);
+  const completedEntries = getCompletedTaskEntries();
 
-  statCompletedTasks.textContent = completedTasks.length;
+  statCompletedTasks.textContent = completedEntries.length;
   statEarnedStars.textContent = balance.earned;
   statActiveReminders.textContent = universityReminders.length;
   statRedeemedRewards.textContent = rewardRedemptions.length;
 
-  renderWeeklyStarsChart(completedTasks);
-  renderCategoryChart(completedTasks);
+  renderWeeklyStarsChart(completedEntries);
+  renderCategoryChart(completedEntries);
   renderStatsProgress(balance.available);
   renderActivityLog();
 }
 
-function renderWeeklyStarsChart(completedTasks) {
+function renderWeeklyStarsChart(completedEntries) {
   const days = getLastSevenDays();
   const maxStars = Math.max(
     1,
     ...days.map((day) => {
-      return completedTasks.reduce((total, task) => {
-        return task.completedAt && task.completedAt.slice(0, 10) === day.key ? total + task.stars : total;
+      return completedEntries.reduce((total, entry) => {
+        return entry.date === day.key ? total + entry.stars : total;
       }, 0);
     })
   );
@@ -844,8 +870,8 @@ function renderWeeklyStarsChart(completedTasks) {
   weeklyStarsChart.replaceChildren();
 
   days.forEach((day) => {
-    const stars = completedTasks.reduce((total, task) => {
-      return task.completedAt && task.completedAt.slice(0, 10) === day.key ? total + task.stars : total;
+    const stars = completedEntries.reduce((total, entry) => {
+      return entry.date === day.key ? total + entry.stars : total;
     }, 0);
     const height = Math.max((stars / maxStars) * 100, stars > 0 ? 8 : 0);
     const bar = document.createElement("div");
@@ -864,10 +890,10 @@ function renderWeeklyStarsChart(completedTasks) {
   });
 }
 
-function renderCategoryChart(completedTasks) {
+function renderCategoryChart(completedEntries) {
   const totals = {
-    Personal: completedTasks.filter((task) => task.category === "Personal").length,
-    Universidad: completedTasks.filter((task) => task.category === "Universidad").length
+    Personal: completedEntries.filter((entry) => entry.category === "Personal").length,
+    Universidad: completedEntries.filter((entry) => entry.category === "Universidad").length
   };
   const maxTotal = Math.max(1, totals.Personal, totals.Universidad);
 
@@ -1014,8 +1040,9 @@ function renderDayDetails() {
   }
 
   dayItems.tasks.forEach((task) => {
+    const isCompleted = isTaskCompletedOnDate(task, selectedCalendarDate);
     const item = document.createElement("article");
-    item.className = `day-detail-item${task.completed ? " completed" : ""}`;
+    item.className = `day-detail-item${isCompleted ? " completed" : ""}`;
 
     const title = document.createElement("span");
     title.className = "day-detail-title";
@@ -1025,9 +1052,13 @@ function renderDayDetails() {
     meta.className = "task-meta";
     meta.append(
       createPill(`Tarea ${task.category}`),
-      createPill(task.completed ? "Completada" : "Pendiente"),
+      createPill(isCompleted ? "Completada" : "Pendiente"),
       createPriorityBadge(task.priority || "Media")
     );
+
+    if (isRecurringTask(task)) {
+      meta.appendChild(createPill("Diaria", "daily"));
+    }
 
     item.append(title, meta);
     dayDetails.appendChild(item);
@@ -1082,7 +1113,7 @@ function selectCalendarDate(dateKey) {
 
 function getCalendarItemsForDate(dateKey) {
   return {
-    tasks: tasks.filter((task) => task.date === dateKey),
+    tasks: tasks.filter((task) => taskAppearsOnDate(task, dateKey)),
     reminders: universityReminders.filter((reminder) => reminder.date === dateKey)
   };
 }
@@ -1124,11 +1155,31 @@ function getHighestPriorityClass(dayItems) {
 
 function toggleTask(taskId) {
   const currentTask = tasks.find((task) => task.id === taskId);
-  const willComplete = currentTask ? !currentTask.completed : false;
+
+  if (!currentTask) {
+    return;
+  }
+
+  const todayKey = formatDateKey(new Date());
+  const completedToday = isTaskCompletedOnDate(currentTask, todayKey);
+  const willComplete = !completedToday;
 
   tasks = tasks.map((task) => {
     if (task.id !== taskId) {
       return task;
+    }
+
+    if (isRecurringTask(task)) {
+      const completedDates = willComplete
+        ? [...new Set([...task.completedDates, todayKey])].sort()
+        : task.completedDates.filter((date) => date !== todayKey);
+
+      return {
+        ...task,
+        completed: false,
+        completedAt: completedDates.length ? `${completedDates[completedDates.length - 1]}T00:00:00.000` : "",
+        completedDates
+      };
     }
 
     return {
@@ -1138,9 +1189,7 @@ function toggleTask(taskId) {
     };
   });
 
-  if (currentTask) {
-    addActivity(willComplete ? `Tarea completada: ${currentTask.title}` : `Tarea desmarcada: ${currentTask.title}`);
-  }
+  addActivity(willComplete ? `Tarea completada: ${currentTask.title}` : `Tarea desmarcada: ${currentTask.title}`);
 
   saveTasks();
   render();
@@ -1164,6 +1213,7 @@ function addTask(event) {
   const date = taskDate.value;
   const stars = Number(taskStars.value);
   const priority = taskPriority.value;
+  const repeatDaily = taskRepeatDaily.checked;
 
   if (!title) {
     showFormError(formError, "Escribe el nombre de la tarea.");
@@ -1200,7 +1250,9 @@ function addTask(event) {
       stars: Math.round(stars),
       completed: false,
       completedAt: "",
-      priority
+      priority,
+      repeatDaily,
+      completedDates: []
     }
   ];
 
@@ -1479,7 +1531,8 @@ function getRelativeReminderDay(value) {
 
 function updateStats() {
   const balance = getStarBalance();
-  const pendingTasks = tasks.filter((task) => !task.completed).length;
+  const todayKey = formatDateKey(new Date());
+  const pendingTasks = tasks.filter((task) => !isTaskCompletedOnDate(task, todayKey)).length;
   const progress = Math.min((balance.available / WEEKLY_GOAL) * 100, 100);
 
   weeklyStars.textContent = `${balance.available} / ${WEEKLY_GOAL}`;
@@ -1679,6 +1732,7 @@ function clearTaskForm() {
   taskCategory.value = "Personal";
   taskDate.value = formatDateKey(new Date());
   taskPriority.value = "Media";
+  taskRepeatDaily.checked = false;
   formError.textContent = "";
 }
 
@@ -1768,8 +1822,8 @@ function formatDateTime(value) {
 }
 
 function getStarBalance() {
-  const earned = tasks.reduce((total, task) => {
-    return task.completed ? total + task.stars : total;
+  const earned = getCompletedTaskEntries().reduce((total, entry) => {
+    return total + entry.stars;
   }, 0);
   const spent = rewardRedemptions.reduce((total, redemption) => {
     return total + Number(redemption.cost);
@@ -1784,6 +1838,54 @@ function getStarBalance() {
 
 function getAllRewards() {
   return [...rewards, ...customRewards];
+}
+
+function isRecurringTask(task) {
+  return Boolean(task.repeatDaily);
+}
+
+function isTaskCompletedOnDate(task, dateKey) {
+  if (isRecurringTask(task)) {
+    return task.completedDates.includes(dateKey);
+  }
+
+  return Boolean(task.completed);
+}
+
+function getTaskCompletionDates(task) {
+  if (isRecurringTask(task)) {
+    return task.completedDates;
+  }
+
+  if (!task.completed) {
+    return [];
+  }
+
+  const completedDate = typeof task.completedAt === "string" ? task.completedAt.slice(0, 10) : "";
+  return [isValidDate(completedDate) ? completedDate : task.date];
+}
+
+function getCompletedTaskEntries() {
+  return tasks.flatMap((task) => {
+    return getTaskCompletionDates(task).map((date) => {
+      return {
+        taskId: task.id,
+        title: task.title,
+        category: task.category,
+        stars: task.stars,
+        date,
+        repeatDaily: isRecurringTask(task)
+      };
+    });
+  });
+}
+
+function taskAppearsOnDate(task, dateKey) {
+  if (!isRecurringTask(task)) {
+    return task.date === dateKey;
+  }
+
+  return task.date <= dateKey;
 }
 
 function showToast(message) {
