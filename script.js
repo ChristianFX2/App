@@ -1720,7 +1720,7 @@ function clearAllStoredData() {
 }
 
 function applySavedTheme() {
-  const savedTheme = localStorage.getItem(THEME_KEY) || "dark";
+  const savedTheme = localStorage.getItem(THEME_KEY) || "light";
   setTheme(savedTheme);
 }
 
