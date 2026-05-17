@@ -106,14 +106,20 @@ const usernameInput = document.querySelector("#usernameInput");
 const usernameError = document.querySelector("#usernameError");
 const welcomeSubmit = document.querySelector("#welcomeSubmit");
 const userGreeting = document.querySelector("#userGreeting");
-const changeUsername = document.querySelector("#changeUsername");
+const openSettings = document.querySelector("#openSettings");
+const settingsModal = document.querySelector("#settingsModal");
+const closeSettings = document.querySelector("#closeSettings");
+const settingsUsernameForm = document.querySelector("#settingsUsernameForm");
+const settingsNameInput = document.querySelector("#settingsNameInput");
+const settingsNameError = document.querySelector("#settingsNameError");
+const settingsCurrentName = document.querySelector("#settingsCurrentName");
+const clearProgressData = document.querySelector("#clearProgressData");
+const clearAllData = document.querySelector("#clearAllData");
 const weeklyStars = document.querySelector("#weeklyStars");
 const weeklyProgress = document.querySelector("#weeklyProgress");
 const taskCount = document.querySelector("#taskCount");
 const themeToggle = document.querySelector("#themeToggle");
-const themeIcon = document.querySelector("#themeIcon");
 const glassToggle = document.querySelector("#glassToggle");
-const glassIcon = document.querySelector("#glassIcon");
 const openTaskModal = document.querySelector("#openTaskModal");
 const taskModal = document.querySelector("#taskModal");
 const closeTaskModal = document.querySelector("#closeTaskModal");
@@ -207,7 +213,11 @@ notificationCheckTimer = window.setInterval(checkReminderNotifications, 60000);
 themeToggle.addEventListener("click", toggleTheme);
 glassToggle.addEventListener("click", toggleGlassMode);
 welcomeForm.addEventListener("submit", saveUsername);
-changeUsername.addEventListener("click", showWelcomeForEdit);
+openSettings.addEventListener("click", showSettingsModal);
+closeSettings.addEventListener("click", hideSettingsModal);
+settingsUsernameForm.addEventListener("submit", saveSettingsUsername);
+clearProgressData.addEventListener("click", clearProgressOnly);
+clearAllData.addEventListener("click", clearAllStoredData);
 openTaskModal.addEventListener("click", toggleQuickActionMenu);
 closeTaskModal.addEventListener("click", hideTaskModal);
 cancelTask.addEventListener("click", hideTaskModal);
@@ -265,6 +275,12 @@ quickNoteModal.addEventListener("click", (event) => {
   }
 });
 
+settingsModal.addEventListener("click", (event) => {
+  if (event.target === settingsModal) {
+    hideSettingsModal();
+  }
+});
+
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") {
     return;
@@ -284,6 +300,10 @@ document.addEventListener("keydown", (event) => {
 
   if (quickNoteModal.classList.contains("open")) {
     hideQuickNoteModal();
+  }
+
+  if (settingsModal.classList.contains("open")) {
+    hideSettingsModal();
   }
 
   if (quickActionMenu.classList.contains("open")) {
@@ -1450,7 +1470,7 @@ async function requestNotificationPermission() {
 function updateNotificationStatus() {
   if (!supportsNotifications()) {
     notificationStatus.textContent = "No soportadas";
-    notificationStatus.className = "notification-status blocked";
+    notificationStatus.className = "blocked";
     notificationMessage.textContent = "Tu navegador no soporta notificaciones.";
     enableNotifications.disabled = true;
     return;
@@ -1464,6 +1484,7 @@ function updateNotificationStatus() {
     notificationStatus.textContent = "Activadas";
     notificationStatus.classList.add("enabled");
     notificationMessage.textContent = "Te avisaré mientras la app esté abierta.";
+    enableNotifications.textContent = "Notificaciones activadas";
     return;
   }
 
@@ -1471,11 +1492,13 @@ function updateNotificationStatus() {
     notificationStatus.textContent = "Bloqueadas";
     notificationStatus.classList.add("blocked");
     notificationMessage.textContent = "Las notificaciones están bloqueadas en el navegador.";
+    enableNotifications.textContent = "Activar notificaciones";
     return;
   }
 
   notificationStatus.textContent = "Pendientes";
   notificationMessage.textContent = "Activa los avisos para tus recordatorios universitarios.";
+  enableNotifications.textContent = "Activar notificaciones";
 }
 
 function checkReminderNotifications(now = new Date()) {
@@ -1623,10 +1646,77 @@ function hideWelcomeScreen() {
 
 function setUsername(username) {
   userGreeting.textContent = `Hola, ${username}`;
+  settingsCurrentName.textContent = username || "Sin nombre";
+  settingsNameInput.value = username || "";
 }
 
 function getSavedUsername() {
   return (localStorage.getItem(USERNAME_KEY) || "").trim();
+}
+
+function showSettingsModal() {
+  settingsNameError.textContent = "";
+  setUsername(getSavedUsername());
+  settingsModal.classList.add("open");
+  settingsModal.setAttribute("aria-hidden", "false");
+}
+
+function hideSettingsModal() {
+  settingsModal.classList.remove("open");
+  settingsModal.setAttribute("aria-hidden", "true");
+}
+
+function saveSettingsUsername(event) {
+  event.preventDefault();
+
+  const username = settingsNameInput.value.trim();
+
+  if (!username) {
+    settingsNameError.textContent = "Escribe un nombre válido.";
+    settingsNameInput.focus();
+    return;
+  }
+
+  localStorage.setItem(USERNAME_KEY, username);
+  setUsername(username);
+  settingsNameError.textContent = "";
+  showToast("Nombre actualizado");
+}
+
+function clearProgressOnly() {
+  const confirmed = window.confirm("¿Borrar tareas, progreso, notas, recompensas personalizadas y actividad? Tu nombre y preferencias se conservarán.");
+
+  if (!confirmed) {
+    return;
+  }
+
+  [TASKS_KEY, REDEMPTIONS_KEY, ACTIVITY_KEY, CUSTOM_REWARDS_KEY, QUICK_NOTES_KEY, NOTIFICATION_ALERTS_KEY].forEach((key) => {
+    localStorage.removeItem(key);
+  });
+
+  tasks = loadTasks();
+  rewardRedemptions = [];
+  activityLog = [];
+  customRewards = [];
+  quickNotes = [];
+  notificationAlertsSent = [];
+  render();
+  updateNotificationStatus();
+  showToast("Datos de progreso borrados");
+}
+
+function clearAllStoredData() {
+  const confirmed = window.confirm("¿Borrar todo, incluyendo tu nombre y preferencias? Volverás a la pantalla de bienvenida.");
+
+  if (!confirmed) {
+    return;
+  }
+
+  Object.keys(localStorage)
+    .filter((key) => key.startsWith("miSistemaPersonal."))
+    .forEach((key) => localStorage.removeItem(key));
+
+  window.location.reload();
 }
 
 function applySavedTheme() {
@@ -1638,7 +1728,7 @@ function setTheme(theme) {
   const isDark = theme === "dark";
 
   document.body.classList.toggle("dark-mode", isDark);
-  themeIcon.textContent = isDark ? "☀" : "☾";
+  themeToggle.checked = isDark;
   themeToggle.setAttribute("aria-label", isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro");
   localStorage.setItem(THEME_KEY, isDark ? "dark" : "light");
 }
@@ -1654,7 +1744,7 @@ function applySavedGlassMode() {
 
 function setGlassMode(isEnabled) {
   document.body.classList.toggle("liquid-glass", isEnabled);
-  glassIcon.textContent = isEnabled ? "◆" : "◇";
+  glassToggle.checked = isEnabled;
   glassToggle.setAttribute("aria-pressed", String(isEnabled));
   glassToggle.setAttribute("aria-label", isEnabled ? "Desactivar Liquid Glass" : "Activar Liquid Glass");
   localStorage.setItem(LIQUID_GLASS_KEY, String(isEnabled));

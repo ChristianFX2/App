@@ -270,8 +270,7 @@ h2 {
   letter-spacing: 0;
 }
 
-.theme-toggle,
-.glass-toggle,
+.settings-button,
 .floating-button,
 .primary-button,
 .icon-button {
@@ -286,46 +285,14 @@ h2 {
   transition: transform 200ms ease, background-color 200ms ease, box-shadow 200ms ease, opacity 200ms ease;
 }
 
-.theme-toggle,
-.glass-toggle {
+.settings-button {
   width: 46px;
   height: 46px;
   border-radius: 18px;
   font-size: 1.05rem;
 }
 
-.name-action {
-  min-height: 46px;
-  padding: 0 14px;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: var(--shadow-soft);
-  cursor: pointer;
-  font-size: 0.82rem;
-  font-weight: 850;
-  transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
-}
-
-.name-action:hover {
-  transform: translateY(-2px);
-  border-color: rgba(100, 210, 255, 0.36);
-}
-
-.glass-toggle {
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-}
-
-.glass-toggle[aria-pressed="true"] {
-  color: #041018;
-  background: linear-gradient(135deg, #e9fbff, #8bf1d8);
-}
-
-.theme-toggle:hover,
-.glass-toggle:hover,
+.settings-button:hover,
 .floating-button:hover,
 .primary-button:hover,
 .icon-button:hover {
@@ -1264,6 +1231,137 @@ body:not(.dark-mode) .tab-button {
   animation: sheetEnter 230ms ease;
 }
 
+.settings-modal {
+  z-index: 24;
+}
+
+.settings-card {
+  position: relative;
+  width: min(100%, 500px);
+  max-height: calc(100vh - 36px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 34px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 22px;
+  animation: sheetEnter 230ms ease;
+}
+
+.settings-section {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-soft);
+}
+
+.settings-section + .settings-section {
+  margin-top: 12px;
+}
+
+.settings-label {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 860;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.settings-name-form {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-name-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 760;
+}
+
+.settings-name-form input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 0 14px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 54px;
+}
+
+.settings-row strong,
+.settings-info strong {
+  display: block;
+  color: var(--text);
+  font-size: 0.96rem;
+}
+
+.settings-row small,
+.settings-info small,
+.settings-info span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 680;
+  line-height: 1.35;
+}
+
+.settings-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.settings-switch input:checked + .switch-control {
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  box-shadow: 0 10px 26px var(--accent-glow);
+}
+
+.settings-switch input:checked + .switch-control::after {
+  transform: translateX(18px);
+}
+
+#notificationStatus.enabled {
+  color: var(--priority-low-text);
+}
+
+#notificationStatus.blocked {
+  color: var(--priority-high-text);
+}
+
+.settings-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.danger-soft {
+  color: var(--priority-medium-text);
+  background: var(--priority-medium-bg);
+}
+
+.danger-button {
+  color: var(--priority-high-text);
+  background: var(--priority-high-bg);
+}
+
 .modal-heading {
   display: flex;
   align-items: flex-start;
@@ -1435,9 +1533,10 @@ body.liquid-glass .analytics-card,
 body.liquid-glass .calendar-panel,
 body.liquid-glass .day-details,
 body.liquid-glass .modal-card,
+body.liquid-glass .settings-card,
 body.liquid-glass .quick-action-card,
 body.liquid-glass .welcome-card,
-body.liquid-glass .name-action,
+body.liquid-glass .settings-button,
 body.liquid-glass .toast {
   background: var(--surface);
   border-color: var(--glass-border);
@@ -1456,12 +1555,11 @@ body.liquid-glass .toast {
   body.liquid-glass .calendar-panel,
   body.liquid-glass .day-details,
   body.liquid-glass .modal-card,
+  body.liquid-glass .settings-card,
   body.liquid-glass .quick-action-card,
   body.liquid-glass .welcome-card,
-  body.liquid-glass .name-action,
+  body.liquid-glass .settings-button,
   body.liquid-glass .toast,
-  body.liquid-glass .theme-toggle,
-  body.liquid-glass .glass-toggle,
   body.liquid-glass .floating-button {
     -webkit-backdrop-filter: blur(var(--blur)) saturate(1.35);
     backdrop-filter: blur(var(--blur)) saturate(1.35);
