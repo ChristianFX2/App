@@ -9,6 +9,7 @@ const CUSTOM_REWARDS_KEY = "miSistemaPersonal.customRewards";
 const QUICK_NOTES_KEY = "miSistemaPersonal.quickNotes";
 const NOTIFICATION_ALERTS_KEY = "miSistemaPersonal.notificationAlertsSent";
 const ACTIVE_TAB_KEY = "miSistemaPersonal.activeTab";
+const USERNAME_KEY = "miSistemaPersonal.username";
 
 const reminderTypes = ["Cuestionario", "Tarea", "Examen", "Exposición", "Proyecto"];
 const courses = [
@@ -98,6 +99,14 @@ let toastTimer;
 let notificationCheckTimer;
 
 const taskList = document.querySelector("#taskList");
+const appShell = document.querySelector("#appShell");
+const welcomeScreen = document.querySelector("#welcomeScreen");
+const welcomeForm = document.querySelector("#welcomeForm");
+const usernameInput = document.querySelector("#usernameInput");
+const usernameError = document.querySelector("#usernameError");
+const welcomeSubmit = document.querySelector("#welcomeSubmit");
+const userGreeting = document.querySelector("#userGreeting");
+const changeUsername = document.querySelector("#changeUsername");
 const weeklyStars = document.querySelector("#weeklyStars");
 const weeklyProgress = document.querySelector("#weeklyProgress");
 const taskCount = document.querySelector("#taskCount");
@@ -188,6 +197,7 @@ const dayDetails = document.querySelector("#dayDetails");
 
 applySavedTheme();
 applySavedGlassMode();
+applySavedUsername();
 applySavedTab();
 render();
 updateNotificationStatus();
@@ -196,6 +206,8 @@ notificationCheckTimer = window.setInterval(checkReminderNotifications, 60000);
 
 themeToggle.addEventListener("click", toggleTheme);
 glassToggle.addEventListener("click", toggleGlassMode);
+welcomeForm.addEventListener("submit", saveUsername);
+changeUsername.addEventListener("click", showWelcomeForEdit);
 openTaskModal.addEventListener("click", toggleQuickActionMenu);
 closeTaskModal.addEventListener("click", hideTaskModal);
 cancelTask.addEventListener("click", hideTaskModal);
@@ -1557,6 +1569,64 @@ function updateNextEvent() {
 function toggleTheme() {
   const nextTheme = document.body.classList.contains("dark-mode") ? "light" : "dark";
   setTheme(nextTheme);
+}
+
+function applySavedUsername() {
+  const username = getSavedUsername();
+
+  if (!username) {
+    showWelcomeScreen();
+    return;
+  }
+
+  setUsername(username);
+  hideWelcomeScreen();
+}
+
+function saveUsername(event) {
+  event.preventDefault();
+
+  const username = usernameInput.value.trim();
+
+  if (!username) {
+    usernameError.textContent = "Escribe tu nombre para entrar.";
+    usernameInput.focus();
+    return;
+  }
+
+  setUsername(username);
+  localStorage.setItem(USERNAME_KEY, username);
+  hideWelcomeScreen();
+}
+
+function showWelcomeForEdit() {
+  usernameInput.value = getSavedUsername();
+  usernameError.textContent = "";
+  welcomeSubmit.textContent = "Guardar";
+  showWelcomeScreen();
+}
+
+function showWelcomeScreen() {
+  welcomeScreen.classList.add("visible");
+  welcomeScreen.setAttribute("aria-hidden", "false");
+  appShell.classList.add("app-locked");
+  window.setTimeout(() => usernameInput.focus(), 50);
+}
+
+function hideWelcomeScreen() {
+  welcomeScreen.classList.remove("visible");
+  welcomeScreen.setAttribute("aria-hidden", "true");
+  appShell.classList.remove("app-locked");
+  welcomeSubmit.textContent = "Entrar";
+  usernameError.textContent = "";
+}
+
+function setUsername(username) {
+  userGreeting.textContent = `Hola, ${username}`;
+}
+
+function getSavedUsername() {
+  return (localStorage.getItem(USERNAME_KEY) || "").trim();
 }
 
 function applySavedTheme() {

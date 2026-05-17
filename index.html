@@ -15,13 +15,33 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <main class="app-shell">
+  <section class="welcome-screen" id="welcomeScreen" aria-labelledby="welcomeTitle">
+    <article class="welcome-card">
+      <p class="eyebrow">Mi Sistema Personal</p>
+      <h1 id="welcomeTitle">Bienvenido a Mi Sistema Personal</h1>
+      <p class="welcome-copy">Escribe tu nombre para personalizar tu experiencia</p>
+
+      <form class="welcome-form" id="welcomeForm">
+        <label>
+          <span>Tu nombre</span>
+          <input type="text" id="usernameInput" name="usernameInput" placeholder="Ej. Christian" autocomplete="name">
+        </label>
+        <p class="form-error" id="usernameError" role="alert"></p>
+        <button class="primary-button" type="submit" id="welcomeSubmit">Entrar</button>
+      </form>
+    </article>
+  </section>
+
+  <main class="app-shell app-locked" id="appShell">
     <header class="topbar">
       <div>
         <p class="eyebrow">Mi Sistema Personal</p>
-        <h1>Hola, Christian</h1>
+        <h1 id="userGreeting">Hola</h1>
       </div>
       <div class="topbar-actions">
+        <button class="name-action" type="button" id="changeUsername" aria-label="Cambiar nombre">
+          Nombre
+        </button>
         <button class="theme-toggle" type="button" id="themeToggle" aria-label="Cambiar modo">
         <span id="themeIcon" aria-hidden="true">☾</span>
         </button>
