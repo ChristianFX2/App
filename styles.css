@@ -270,7 +270,6 @@ h2 {
   letter-spacing: 0;
 }
 
-.settings-button,
 .floating-button,
 .primary-button,
 .icon-button {
@@ -286,10 +285,33 @@ h2 {
 }
 
 .settings-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 46px;
   height: 46px;
+  border: 1px solid var(--border);
   border-radius: 18px;
+  color: rgba(16, 24, 39, 0.86);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(237, 243, 251, 0.76));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    var(--shadow-soft);
+  cursor: pointer;
   font-size: 1.05rem;
+  transition: transform 200ms ease, border-color 200ms ease, background-color 200ms ease, box-shadow 200ms ease, color 200ms ease;
+}
+
+body.dark-mode .settings-button {
+  color: rgba(247, 250, 255, 0.92);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05)),
+    rgba(21, 26, 36, 0.88);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    var(--shadow-soft);
 }
 
 .settings-button:hover,
